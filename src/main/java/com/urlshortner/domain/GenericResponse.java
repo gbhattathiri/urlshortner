@@ -1,6 +1,8 @@
 package com.urlshortner.domain;
 
-//{success: 'true', description: 'Your account is opened', password: 'xC345Fc0'}
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
 public class GenericResponse {
 
 	Boolean success;

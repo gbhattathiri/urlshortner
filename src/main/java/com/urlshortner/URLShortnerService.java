@@ -1,4 +1,3 @@
-
 package com.urlshortner;
 
 import java.io.IOException;
@@ -24,7 +23,7 @@ import com.sun.jersey.core.util.Base64;
 import com.urlshortner.domain.GenericResponse;
 import com.urlshortner.domain.RealURL;
 
-@Path("/")
+@Path("/tinyURL")
 public class URLShortnerService {
 
 	@Context
@@ -34,16 +33,17 @@ public class URLShortnerService {
 	static LinkedHashMap<String, ArrayList<String>> urlToUserMapping = new LinkedHashMap<String, ArrayList<String>>();
 
 	@POST
-	@Path("/tinyURL")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response createTinyURL(RealURL urlObject) {
 
-		final String id = Hashing.murmur3_32().hashString(urlObject.getUrl(), StandardCharsets.UTF_8).toString();
+		final String id = Hashing.murmur3_32()
+				.hashString(urlObject.getUrl(), StandardCharsets.UTF_8)
+				.toString();
 		shortUrl.put(id, urlObject);
 		String username = getUsername(request.getHeader("Authorization"));
-		
-		//Add user to short url mapping for stat purpose
+
+		// Add user to short url mapping for stat purpose
 		ArrayList<String> shortUrls = urlToUserMapping.get(username);
 		if (shortUrls == null) {
 			shortUrls = new ArrayList<String>();
@@ -66,21 +66,28 @@ public class URLShortnerService {
 	public Response accessTinyURL(@PathParam("id") String id) {
 
 		RealURL realurl = shortUrl.get(id);
-		// Increase the access count
-		try {
-			Integer count = realurl.getAccessCount();
-			if (count != null) {
-				count++;
-			} else {
-				count = 1;
-			}
-			return Response.status(Integer.parseInt(realurl.getRedirectType())).location(new URI(realurl.getUrl()))
-					.build();
+		if (realurl != null) {
+			// Increase the access count
+			try {
+				Integer count = realurl.getAccessCount();
+				if (count != null) {
+					count++;
+				} else {
+					count = 1;
+				}
 
-		} catch (Exception e) {
-			e.printStackTrace();
+				realurl.setAccessCount(count);
+
+				return Response
+						.status(Integer.parseInt(realurl.getRedirectType()))
+						.location(new URI(realurl.getUrl())).build();
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
-		return Response.status(Integer.parseInt(realurl.getRedirectType())).build();
+
+		return Response.status(404).build();
 
 	}
 
@@ -109,7 +116,8 @@ public class URLShortnerService {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		final StringTokenizer tokenizer = new StringTokenizer(usernameAndPassword, ":");
+		final StringTokenizer tokenizer = new StringTokenizer(
+				usernameAndPassword, ":");
 		return tokenizer.nextToken();
 	}
 
